@@ -7,24 +7,27 @@ on:
 
 env:
   VITE_API_URL: https://api.gmrehman.com/api
-  FTP_HOST: ftp.gmrehman.com
+  # Use server IP if hostname times out from GitHub Actions (FileZilla resolved to this)
+  FTP_HOST: 67.222.128.140
   FTP_PORT: 21
-  FTP_PROTOCOL: ftp
+  FTP_PROTOCOL: ftps
+  FTP_TIMEOUT: 120000
 
 jobs:
   deploy-web:
     name: Deploy website (gmrehman.com)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Check FTP secrets are set
         run: |
           if [ -z "${{ secrets.FTP_USERNAME }}" ] && [ -z "${{ secrets.FTP_WEB_USERNAME }}" ]; then
-            echo "::error::Missing secret: add FTP_USERNAME (admin@gmrehman.com) in GitHub Settings → Secrets"
+            echo "::error::Missing secret: FTP_USERNAME or FTP_WEB_USERNAME"
             exit 1
           fi
           if [ -z "${{ secrets.FTP_PASSWORD }}" ] && [ -z "${{ secrets.FTP_WEB_PASSWORD }}" ]; then
-            echo "::error::Missing secret: add FTP_PASSWORD in GitHub Settings → Secrets"
+            echo "::error::Missing secret: FTP_PASSWORD or FTP_WEB_PASSWORD"
             exit 1
           fi
 
@@ -45,31 +48,35 @@ jobs:
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL || env.VITE_API_URL }}
 
-      - name: Deploy to public_html
+      - name: Deploy to public_html (FTPS)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
-          server: ${{ env.FTP_HOST }}
+          server: ${{ secrets.FTP_HOST || env.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME || secrets.FTP_WEB_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD || secrets.FTP_WEB_PASSWORD }}
-          port: ${{ env.FTP_PORT }}
+          port: ${{ secrets.FTP_PORT || env.FTP_PORT }}
           protocol: ${{ secrets.FTP_PROTOCOL || env.FTP_PROTOCOL }}
+          security: loose
+          timeout: ${{ secrets.FTP_TIMEOUT || env.FTP_TIMEOUT }}
           local-dir: ./apps/web/dist/
           server-dir: ${{ secrets.FTP_WEB_DIR || '/public_html/' }}
           dangerous-clean-slate: false
+          log-level: verbose
 
   deploy-api:
     name: Deploy API (api.gmrehman.com)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Check FTP secrets are set
         run: |
           if [ -z "${{ secrets.FTP_USERNAME }}" ] && [ -z "${{ secrets.FTP_API_USERNAME }}" ]; then
-            echo "::error::Missing secret: add FTP_USERNAME (admin@gmrehman.com) in GitHub Settings → Secrets"
+            echo "::error::Missing secret: FTP_USERNAME or FTP_API_USERNAME"
             exit 1
           fi
           if [ -z "${{ secrets.FTP_PASSWORD }}" ] && [ -z "${{ secrets.FTP_API_PASSWORD }}" ]; then
-            echo "::error::Missing secret: add FTP_PASSWORD in GitHub Settings → Secrets"
+            echo "::error::Missing secret: FTP_PASSWORD or FTP_API_PASSWORD"
             exit 1
           fi
 
@@ -97,14 +104,17 @@ jobs:
           cp -r apps/api/prisma release/api-bundle/prisma
           cp apps/api/package.json release/api-bundle/package.json
 
-      - name: Deploy API files
+      - name: Deploy API files (FTPS)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
-          server: ${{ env.FTP_HOST }}
+          server: ${{ secrets.FTP_HOST || env.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME || secrets.FTP_API_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD || secrets.FTP_API_PASSWORD }}
-          port: ${{ env.FTP_PORT }}
+          port: ${{ secrets.FTP_PORT || env.FTP_PORT }}
           protocol: ${{ secrets.FTP_PROTOCOL || env.FTP_PROTOCOL }}
+          security: loose
+          timeout: ${{ secrets.FTP_TIMEOUT || env.FTP_TIMEOUT }}
           local-dir: ./release/api-bundle/
           server-dir: ${{ secrets.FTP_API_DIR || '/api/apps/api/' }}
           dangerous-clean-slate: false
+          log-level: verbose

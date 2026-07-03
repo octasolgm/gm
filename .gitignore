@@ -10,14 +10,11 @@ out/
 build/
 
 # Env
-.env
-.env.local
 .env.ngrok
 .env.*.local
 
 # IDE
 .idea/
-.vscode/
 *.swp
 
 # OS
@@ -30,3 +27,4 @@ apps/api/prisma/*.db
 # Logs
 *.log
 npm-debug.log*
+config.bat

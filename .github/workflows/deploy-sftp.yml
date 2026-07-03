@@ -1,0 +1,73 @@
+name: Deploy Portfolio (SFTP)
+
+# Use this workflow if FTP/FTPS times out from GitHub Actions.
+# Requires SSH/SFTP on port 22 (enable in cPanel → SSH Access).
+
+on:
+  workflow_dispatch:
+
+env:
+  VITE_API_URL: https://api.gmrehman.com/api
+
+jobs:
+  deploy-web:
+    name: Deploy website via SFTP
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build:web
+        env:
+          VITE_API_URL: ${{ env.VITE_API_URL }}
+
+      - name: Upload to public_html
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: ${{ secrets.FTP_HOST || '67.222.128.140' }}
+          username: ${{ secrets.FTP_USERNAME || secrets.FTP_WEB_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD || secrets.FTP_WEB_PASSWORD }}
+          port: 22
+          local_path: './apps/web/dist/*'
+          remote_path: '/home/gmrehman/public_html/'
+          sftp_only: true
+
+  deploy-api:
+    name: Deploy API via SFTP
+    runs-on: ubuntu-latest
+    needs: deploy-web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run db:generate && npm run build:api
+
+      - name: Prepare API bundle
+        run: |
+          mkdir -p release/api-bundle
+          cp -r apps/api/dist release/api-bundle/dist
+          cp -r apps/api/prisma release/api-bundle/prisma
+          cp apps/api/package.json release/api-bundle/package.json
+
+      - name: Upload API files
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: ${{ secrets.FTP_HOST || '67.222.128.140' }}
+          username: ${{ secrets.FTP_USERNAME || secrets.FTP_API_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD || secrets.FTP_API_PASSWORD }}
+          port: 22
+          local_path: './release/api-bundle/*'
+          remote_path: '/home/gmrehman/api/apps/api/'
+          sftp_only: true

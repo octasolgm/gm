@@ -9,6 +9,7 @@ env:
   VITE_API_URL: https://api.gmrehman.com/api
   FTP_HOST: ftp.gmrehman.com
   FTP_PORT: 21
+  FTP_PROTOCOL: ftp
 
 jobs:
   deploy-web:
@@ -16,6 +17,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check FTP secrets are set
+        run: |
+          if [ -z "${{ secrets.FTP_USERNAME }}" ] && [ -z "${{ secrets.FTP_WEB_USERNAME }}" ]; then
+            echo "::error::Missing secret: add FTP_USERNAME (admin@gmrehman.com) in GitHub Settings → Secrets"
+            exit 1
+          fi
+          if [ -z "${{ secrets.FTP_PASSWORD }}" ] && [ -z "${{ secrets.FTP_WEB_PASSWORD }}" ]; then
+            echo "::error::Missing secret: add FTP_PASSWORD in GitHub Settings → Secrets"
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -40,7 +52,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME || secrets.FTP_WEB_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD || secrets.FTP_WEB_PASSWORD }}
           port: ${{ env.FTP_PORT }}
-          protocol: ftps
+          protocol: ${{ secrets.FTP_PROTOCOL || env.FTP_PROTOCOL }}
           local-dir: ./apps/web/dist/
           server-dir: ${{ secrets.FTP_WEB_DIR || '/public_html/' }}
           dangerous-clean-slate: false
@@ -50,6 +62,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check FTP secrets are set
+        run: |
+          if [ -z "${{ secrets.FTP_USERNAME }}" ] && [ -z "${{ secrets.FTP_API_USERNAME }}" ]; then
+            echo "::error::Missing secret: add FTP_USERNAME (admin@gmrehman.com) in GitHub Settings → Secrets"
+            exit 1
+          fi
+          if [ -z "${{ secrets.FTP_PASSWORD }}" ] && [ -z "${{ secrets.FTP_API_PASSWORD }}" ]; then
+            echo "::error::Missing secret: add FTP_PASSWORD in GitHub Settings → Secrets"
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -81,7 +104,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME || secrets.FTP_API_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD || secrets.FTP_API_PASSWORD }}
           port: ${{ env.FTP_PORT }}
-          protocol: ftps
+          protocol: ${{ secrets.FTP_PROTOCOL || env.FTP_PROTOCOL }}
           local-dir: ./release/api-bundle/
           server-dir: ${{ secrets.FTP_API_DIR || '/api/apps/api/' }}
           dangerous-clean-slate: false

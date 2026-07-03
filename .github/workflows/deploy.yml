@@ -22,7 +22,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -34,11 +34,11 @@ jobs:
           VITE_API_URL: ${{ secrets.VITE_API_URL || env.VITE_API_URL }}
 
       - name: Deploy to public_html
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: ${{ env.FTP_HOST }}
-          username: ${{ secrets.FTP_WEB_USERNAME }}
-          password: ${{ secrets.FTP_WEB_PASSWORD }}
+          username: ${{ secrets.FTP_USERNAME || secrets.FTP_WEB_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD || secrets.FTP_WEB_PASSWORD }}
           port: ${{ env.FTP_PORT }}
           protocol: ftps
           local-dir: ./apps/web/dist/
@@ -48,7 +48,6 @@ jobs:
   deploy-api:
     name: Deploy API (api.gmrehman.com)
     runs-on: ubuntu-latest
-    needs: deploy-web
 
     steps:
       - name: Checkout
@@ -57,7 +56,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -76,11 +75,11 @@ jobs:
           cp apps/api/package.json release/api-bundle/package.json
 
       - name: Deploy API files
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: ${{ env.FTP_HOST }}
-          username: ${{ secrets.FTP_API_USERNAME }}
-          password: ${{ secrets.FTP_API_PASSWORD }}
+          username: ${{ secrets.FTP_USERNAME || secrets.FTP_API_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD || secrets.FTP_API_PASSWORD }}
           port: ${{ env.FTP_PORT }}
           protocol: ftps
           local-dir: ./release/api-bundle/

@@ -1,0 +1,7 @@
+{
+  "name": "@gmrehman/shared-data",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/portfolio.ts",
+  "types": "./src/portfolio.ts"
+}

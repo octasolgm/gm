@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(120)
+  email     String   @db.VarChar(180)
+  phone     String?  @db.VarChar(30)
+  subject   String   @db.VarChar(200)
+  message   String   @db.Text
+  source    String   @default("portfolio") @db.VarChar(50)
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("contact_messages")
+}
+
+model ContactEvent {
+  id        Int      @id @default(autoincrement())
+  type      String   @db.VarChar(50)
+  metadata  String?  @db.Text
+  ip        String?  @db.VarChar(45)
+  userAgent String?  @map("user_agent") @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("contact_events")
+}
